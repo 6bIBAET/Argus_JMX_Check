@@ -27,3 +27,53 @@ Warning and Critical arguments are optional
   --warning 100000000 \
   --critical 200000000
 ```
+
+<h3 align="left">
+⚙️ Icinga2 Add
+</h3>  
+
+- **commands.conf** 
+```bash
+object CheckCommand "check_wildfly_jm" {
+  import "plugin-check-command"
+  command = [ PluginDir + "/check_wildfly_jm.py" ]
+  arguments = {
+                "--url" = "$host.vars.wildfly_full_server_url$"
+                "--username" = "$host.vars.wildfly_username$"
+                "--password" = "$host.vars.wildfly_pass$"
+                "--object-name" = "$service.vars.object_name$"
+                "--attribute" = "$service.vars.attribute$"
+                "--warning" = "$service.vars.warning$"
+                "--critical" = "$service.vars.critical$"
+                }
+}
+```
+
+- **service.conf**
+
+```bash
+apply Service "Wildfly-HeapMemoryUsage" {
+  display_name = "Wildfly HeapMemoryUsage"
+  import "generic-service"
+  check_command = "check_wildfly_jm"
+
+  vars.object_name = "java.lang:type=Memory"
+  vars.attribute = "HeapMemoryUsage"
+  vars.warning = "1234567"
+  vars.critical = "2345678"
+  
+  assign where host.vars.wildfly_enable == "true"
+}
+```
+
+- **Add to host config**
+```bash
+object Host "servername" {
+.....
+vars.wildfly_enable = "true"
+vars.wildfly_full_server_url = "service:jmx:remote+http://IP or Hostname:9990"
+vars.wildfly_username = "username"
+vars.wildfly_pass = "password"
+
+.....
+```
